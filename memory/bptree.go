@@ -73,11 +73,6 @@ func (t *BPTree) findLeaf(key uint64) *Node {
 	p := t.root
 
 	for !p.isLeaf {
-		/*
-			idx := sort.Search(len(p.keys), func(i int) bool {
-				return key <= p.keys[i]
-			})
-		*/
 		idx := getIndex(p.keys, key)
 		if idx == len(p.keys) {
 			idx = len(p.keys) - 1
@@ -89,11 +84,6 @@ func (t *BPTree) findLeaf(key uint64) *Node {
 
 func insertKeyValIntoLeaf(n *Node, key uint64, rec string) (int, error) {
 	idx := getIndex(n.keys, key)
-	/*
-		idx := sort.Search(len(n.keys), func(i int) bool {
-			return key <= n.keys[i]
-		})
-	*/
 	if idx < len(n.keys) && n.keys[idx] == key {
 		return 0, ErrKeyExists
 	}
