@@ -561,3 +561,59 @@ func (n *Node) containsKey(key uint64) int64 {
 	}
 	return -1
 }
+
+
+/*--- kdjlyy start ---*/
+
+func (t *BPTree) Find(key uint64) (string, error) {
+	i := 0
+	leaf := t.findLeaf(key)
+
+	//fmt.Println(leaf.records)
+	if leaf == nil {
+		return "", ErrKeyNotFound
+	}
+	flag := false // the leaf has no such key
+	for i = 0; i < len(leaf.keys); i++ {
+		if leaf.keys[i] == key {
+			flag = true
+		}
+	}
+	if (!flag) {
+		return "", ErrKeyNotFound
+	}
+
+	for i = 0; i < len(leaf.keys); i++ {
+		if leaf.keys[i] == key {
+			break
+		}
+	}
+	return leaf.records[i], nil
+}
+
+//change the key's value: (key, old_value) -> (key, value)
+func (t *BPTree) Update(key uint64, value string) error {
+	i := 0
+	leaf := t.findLeaf(key)
+	if leaf == nil {
+		return ErrKeyNotFound
+	}
+	flag := false // the leaf has no such key
+	for i = 0; i < len(leaf.keys); i++ {
+		if leaf.keys[i] == key {
+			flag = true
+		}
+	}
+	if (!flag) {
+		return ErrKeyNotFound
+	}
+
+	for i = 0; i < len(leaf.keys); i++ {
+		if leaf.keys[i] == key {
+			leaf.records[i] = value
+		}
+	}
+	return  nil
+}
+
+/*--- kdjlyy end ---*/

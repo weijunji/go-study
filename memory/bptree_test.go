@@ -1,6 +1,9 @@
 package memory
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 var testData = []struct {
 	op    string
@@ -14,6 +17,12 @@ var testData = []struct {
 	{"insert", 7, "test7"},
 	{"insert", 20, "test20"},
 	{"insert", 1, "test1"},
+	// kdjlyy
+	{"update", 3, "test3_updated"},
+	{"update", 16, "test16_updated"},
+	{"update", 6, "test6_updated"},
+	{"find", 7, ""},
+	{"find", 100, ""},
 }
 
 func TestBPTree(t *testing.T) {
@@ -22,8 +31,28 @@ func TestBPTree(t *testing.T) {
 		switch data.op {
 		case "insert":
 			tree.Insert(data.key, data.value)
+		case "find": { // kdjlyy
+			record, err := tree.Find(data.key)
+			if (err != nil) {
+				fmt.Printf("%s in Find(%d)!!!\n", err, data.key)
+			} else {
+				fmt.Printf("Find(%d) = %s\n", data.key, record)
+			}
+		}
+		case "update": { // kdjlyy
+			err := tree.Update(data.key, data.value)
+			if (err != nil) {
+				fmt.Printf("%s in Update(%d, %s)!!!\n", err, data.key, data.value)
+			}
+		}
+
 		}
 	}
+
+
+	PrintTree(tree)
+
 	tree.Delete(13)
+	PrintTree(tree)
 	// use 'go test . -v' to see the tree
 }
