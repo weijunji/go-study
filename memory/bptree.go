@@ -6,9 +6,8 @@ import (
 	"sort"
 )
 
-const order int = 6
+const order int = 4
 const half int = (order + 1) / 2
-
 
 // ErrKeyExists : key already exists
 var ErrKeyExists = errors.New("Key exists")
@@ -42,7 +41,7 @@ func getIndex(keys []uint64, key uint64) int {
 }
 
 // print tree for debug
-func printTree(tree *BPTree) {
+func PrintTree(tree *BPTree) {
 	queue := make([]*Node, 0)
 	if tree.root != nil {
 		queue = append(queue, tree.root)
@@ -289,19 +288,22 @@ func (n *Node) remove(key uint64, tree *BPTree) error {
 						n.prev.keys = nil
 						n.prev.records = nil
 						curIndex := n.getParentIndex()
-						//移除父节点中的key索引的值
-						n.parent.removeInsideKey(uint64(curIndex))
+						//修改父节点对当前节点的key索引值
+						n.parent.keys[curIndex] = n.keys[len(n.keys)-1]
+						//移除父节点中前节点的key索引的值
+						n.parent.removeInsideKey(int64(curIndex - 1))
 						//删除父节点中指向左兄弟的指针
-						n.parent.children = append(n.parent.children[0:curIndex], n.parent.children[curIndex+1:]...)
+						n.parent.children = append(n.parent.children[0:curIndex-1], n.parent.children[curIndex:]...)
 						//更新链表
-						if n.prev.prev != nil {
+						if n.prev != tree.firstLeaf {
 							temp := n.prev
 							temp.prev.next = n
 							n.prev = temp.prev
 							temp.prev = nil
 							temp.next = nil
 						} else {
-							//设置头节点
+							tree.firstLeaf = n
+							n.prev = nil
 						}
 
 					} else if n.canMerge(n.next) { //和右兄弟合并
@@ -309,10 +311,12 @@ func (n *Node) remove(key uint64, tree *BPTree) error {
 						n.addNextNode(n.next)
 						n.next.parent = nil
 						n.next.keys = nil
-						n.records = nil
-						curIndex := n.next.getParentIndex()
+						n.next.records = nil
+						curIndex := n.getParentIndex()
+						//修改父节点对当前节点的key索引值
+						n.parent.keys[curIndex] = n.keys[len(n.keys)-1]
 						//移除父节点中的key索引的值
-						n.parent.removeInsideKey(uint64(curIndex))
+						n.parent.removeInsideKey(int64(curIndex + 1))
 						//删除父节点指向右兄弟的指针
 						n.parent.children = append(n.parent.children[0:curIndex+1], n.parent.children[curIndex+2:]...)
 						//更新链表
@@ -323,37 +327,37 @@ func (n *Node) remove(key uint64, tree *BPTree) error {
 							temp.prev = nil
 							temp.next = nil
 						}
-					} else {
-
 					}
 				}
 
 			}
+			n.updateMaxKey()
 			n.parent.updateRemove(tree)
 		}
 	} else {
-		//递归查询
-		if key < n.keys[0] {
-			//沿着第一个子节点进行删除
-			return n.children[0].remove(key, tree)
-		} else if key >= n.keys[len(n.keys)-1] {
-			//沿着最后一个子节点进行删除
-			return n.children[len(n.children)-1].remove(key, tree)
-		} else {
-			for i := 1; i < len(n.keys); i++ {
-				if key < n.keys[i] {
-					return n.children[i].remove(key, tree)
-				}
+		for i := 0; i < len(n.keys); i++ {
+			if key <= n.keys[i] {
+				return n.children[i].remove(key, tree)
 			}
 		}
+		return ErrKeyNotFound
 	}
 	return errors.New("success")
+}
+func (n *Node) updateMaxKey() {
+	if n.parent == nil {
+		return
+	}
+	index := n.getParentIndex()
+	n.parent.keys[index] = n.keys[len(n.keys)-1]
+	n.parent.updateMaxKey()
+
 }
 
 //删除节点后的内部节点进行跟新
 func (n *Node) updateRemove(tree *BPTree) {
 	//判断该节点是否满足B+树性质，即节点数>order/2
-	if len(n.children) <= order/2 {
+	if len(n.children) < half {
 		if n.parent == nil {
 			//当前节点为根
 			if len(n.children) >= 2 {
@@ -368,7 +372,7 @@ func (n *Node) updateRemove(tree *BPTree) {
 				n.keys = nil
 			}
 		} else { //中间节点修复
-			curIndex := n.parent.getParentIndex() + 1
+			curIndex := n.getParentIndex()
 			preIndex := curIndex - 1
 			nextIndex := curIndex + 1
 			var preNode, nextNode *Node = nil, nil
@@ -390,18 +394,19 @@ func (n *Node) updateRemove(tree *BPTree) {
 					preNode.keys = nil
 					curIndexkey := n.getParentIndex()
 					//删除父节点中对当前节点的key索引
-					n.parent.keys = append(n.parent.keys[0:curIndexkey], n.parent.keys[curIndexkey+1:]...)
+					n.parent.keys = append(n.parent.keys[0:curIndexkey-1], n.parent.keys[curIndexkey:]...)
 					//删除父节点中对前驱节点的索引
-					n.parent.children = append(n.parent.children[0:curIndexkey], n.parent.children[curIndexkey+1:]...)
+					n.parent.children = append(n.parent.children[0:curIndexkey-1], n.parent.children[curIndexkey:]...)
 				} else if n.canMerge(nextNode) {
 					n.addNextNode(nextNode)
 					nextNode.parent = nil
 					nextNode.keys = nil
 					curIndexkey := nextNode.getParentIndex()
 					n.parent.keys = append(n.parent.keys[0:curIndexkey], n.parent.keys[curIndexkey+1:]...)
-					n.parent.children = append(n.parent.children[0:curIndexkey+1], n.parent.children[curIndexkey+2:]...)
+					n.parent.children = append(n.parent.children[0:curIndexkey], n.parent.children[curIndexkey+1:]...)
 				}
 			}
+			n.updateMaxKey()
 			n.parent.updateRemove(tree)
 		}
 	}
@@ -409,41 +414,38 @@ func (n *Node) updateRemove(tree *BPTree) {
 
 //向右兄弟借值
 func (n *Node) borrowNodeNext(nextNode *Node) {
-	parIndex := n.getParentIndex() + 1
-	downkey := n.parent.keys[parIndex]
-	n.keys = append(n.keys, downkey) //将key下移
-	//将nextNode的key上移
-	n.parent.keys[parIndex] = nextNode.keys[0]
-	//移除nextNode的第一个key
+	keyborrow := nextNode.keys[0]
+	childborrow := nextNode.children[0]
 	nextNode.keys = nextNode.keys[1:]
-	//将nextNode的child节点移到到当前节点
-	n.children = append(n.children, nextNode.children[0])
-	n.children[len(n.children)-1].parent = n
 	nextNode.children = nextNode.children[1:]
+	n.keys = append(n.keys, keyborrow)
+	n.children = append(n.children, childborrow)
+	// 找到当前节点在父节点中的索引
+	index := n.getParentIndex()
+	//修改父节点key中的索引值
+	n.parent.keys[index] = n.keys[len(n.keys)-1]
+
 }
 
 //向左兄弟借值
 func (n *Node) borrowNodePrevious(preNode *Node) {
-	parIndex := n.getParentIndex()
-	downkey := n.parent.keys[parIndex]
-	n.keys = append([]uint64{downkey}, n.keys...) //先将key下移
-	//将preNode的key上移动
-	n.parent.keys[parIndex] = preNode.keys[len(preNode.keys)-1]
+	size := len(preNode.keys)
+	keyborrow := preNode.keys[size-1]
+	childborrow := preNode.children[size-1]
 	preNode.keys = preNode.keys[:len(preNode.keys)-1]
-	//将preNode的child移到当前节点
-	n.children = append([]*Node{preNode.children[len(preNode.children)-1]}, n.children...)
-	//修改转移过来的child的父节点
-	n.children[0].parent = n
 	preNode.children = preNode.children[:len(preNode.children)-1]
+	n.keys = append([]uint64{keyborrow}, n.keys...)
+	n.children = append([]*Node{childborrow}, n.children...)
+	// 找到当前节点在父节点中的索引位置
+	index := n.getParentIndex()
+	//修改父节点key中的索引值
+	n.parent.keys[index-1] = n.prev.keys[len(n.prev.keys)-1]
 }
 
 //当前节点与右兄弟合并
 func (n *Node) addNextNode(nextnode *Node) {
-	if !nextnode.isLeaf {
-		index := nextnode.getParentIndex()
-		n.keys = append(n.keys, nextnode.parent.keys[index])
-	}
 	n.keys = append(n.keys, nextnode.keys...)
+	n.records = append(n.records, nextnode.records...)
 	if !nextnode.isLeaf {
 		//设置父节点
 		for i := 0; i < len(nextnode.children); i++ {
@@ -455,13 +457,9 @@ func (n *Node) addNextNode(nextnode *Node) {
 
 //当前节点与前一个节点合并
 func (n *Node) addPreNode(prenode *Node) {
-	if !prenode.isLeaf {
-		index := n.getParentIndex()
-		tempkey := []uint64{n.parent.keys[index]}
-		n.keys = append(tempkey, n.keys...)
-	}
 	tempkey := prenode.keys
 	n.keys = append(tempkey, n.keys...)
+	n.records = append(prenode.records, n.records...)
 	if !prenode.isLeaf {
 		//设置父节点
 		for i := 0; i < len(prenode.children); i++ {
@@ -472,7 +470,7 @@ func (n *Node) addPreNode(prenode *Node) {
 
 }
 func (n *Node) canMerge(merge *Node) bool {
-	if merge != nil && merge.parent == n.parent && len(merge.keys) <= order/2 {
+	if merge != nil && merge.parent == n.parent && len(merge.keys) <= half {
 		return true
 	}
 	return false
@@ -486,10 +484,10 @@ func (n *Node) borrowFromRightLeaf() {
 	n.next.removeLeafKey(0)
 	n.keys = append(n.keys, keyborrow)
 	n.records = append(n.records, valborrow)
-	// 找到当前节点的后继节点在父节点中的索引
-	index := n.next.getParentIndex()
+	// 找到当前节点在父节点中的索引
+	index := n.getParentIndex()
 	//修改父节点key中的索引值
-	n.parent.keys[index] = n.next.keys[0]
+	n.parent.keys[index] = n.keys[len(n.keys)-1]
 }
 
 //从左兄弟借值
@@ -497,7 +495,7 @@ func (n *Node) borrowFromLeftLeaf() {
 	size := len(n.prev.keys)
 	keyborrow := n.prev.keys[size-1]
 	valborrow := n.prev.records[size-1]
-	n.prev.removeLeafKey(uint64(size - 1))
+	n.prev.removeLeafKey(int64(size - 1))
 
 	tempkey := []uint64{keyborrow}
 	tempkey = append(tempkey, n.keys...)
@@ -508,49 +506,49 @@ func (n *Node) borrowFromLeftLeaf() {
 	// 找到当前节点在父节点中的索引位置
 	index := n.getParentIndex()
 	//修改父节点key中的索引值
-	n.parent.keys[index] = keyborrow
+	n.parent.keys[index-1] = n.prev.keys[len(n.prev.keys)-1]
 }
 
 //找到当前节点在父节点中的entries
 func (n *Node) getParentIndex() int {
 	for i, child := range n.parent.children {
 		if child == n {
-			return i - 1
+			return i
 		}
 	}
 	return -1
 }
 
-func (n *Node) removeLeafKey(index uint64) {
+func (n *Node) removeLeafKey(index int64) {
 	n.keys = append(n.keys[:index], n.keys[index+1:]...)
 	n.records = append(n.records[:index], n.records[index+1:]...)
 }
 
-func (n *Node) removeInsideKey(index uint64) {
+func (n *Node) removeInsideKey(index int64) {
 	n.keys = append(n.keys[:index], n.keys[index+1:]...)
 }
 
 //判断某个节点（同属于一个父节点）是否有多余的值可以借出
 func (n *Node) canborrow(borrow *Node) bool {
-	if borrow != nil && len(borrow.keys) > order/2 && borrow.parent == n.parent {
+	if borrow != nil && len(borrow.keys) > half && borrow.parent == n.parent {
 		return true
 	}
 	return false
 }
 
 func (n *Node) canRemoveDirectly() bool {
-	if len(n.keys) > order/2 {
+	if len(n.keys) > half {
 		return true
 	}
 	return false
 }
 
 //在node中的关键字切片中进行二分法查找，返回元素下标，若没找着返回-1
-func (n *Node) containsKey(key uint64) uint64 {
-	var low, high uint64 = 0, uint64(len(n.keys) - 1)
-	var mid uint64
+func (n *Node) containsKey(key uint64) int64 {
+	var low, high int64 = 0, int64(len(n.keys) - 1)
+	var mid int64
 	for low <= high {
-		mid = uint64(low+high) / 2
+		mid = (low + high) / 2
 		if key == n.keys[mid] {
 			return mid
 		}

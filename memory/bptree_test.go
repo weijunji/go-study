@@ -24,6 +24,6 @@ func TestBPTree(t *testing.T) {
 			tree.Insert(data.key, data.value)
 		}
 	}
+	tree.Delete(13)
 	// use 'go test . -v' to see the tree
-	printTree(tree)
 }
