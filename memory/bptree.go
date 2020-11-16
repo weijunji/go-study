@@ -73,13 +73,14 @@ func NewBPTree() *BPTree {
 
 func (t *BPTree) findLeaf(key uint64) *Node {
 	p := t.root
-
-	for !p.isLeaf {
-		idx := getIndex(p.keys, key)
-		if idx == len(p.keys) {
-			idx = len(p.keys) - 1
+	if p != nil {
+		for !p.isLeaf {
+			idx := getIndex(p.keys, key)
+			if idx == len(p.keys) {
+				idx = len(p.keys) - 1
+			}
+			p = p.children[idx]
 		}
-		p = p.children[idx]
 	}
 	return p
 }

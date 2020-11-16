@@ -10,6 +10,7 @@ var testData = []struct {
 	key   uint64
 	value string
 }{
+	{"update", 100, "test100"},
 	{"insert", 10, "test10"},
 	{"insert", 6, "test6"},
 	{"insert", 3, "test3"},
@@ -31,24 +32,25 @@ func TestBPTree(t *testing.T) {
 		switch data.op {
 		case "insert":
 			tree.Insert(data.key, data.value)
-		case "find": { // kdjlyy
-			record, err := tree.Find(data.key)
-			if (err != nil) {
-				fmt.Printf("%s in Find(%d)!!!\n", err, data.key)
-			} else {
-				fmt.Printf("Find(%d) = %s\n", data.key, record)
+		case "find":
+			{ // kdjlyy
+				record, err := tree.Find(data.key)
+				if err != nil {
+					fmt.Printf("%s in Find(%d)!!!\n", err, data.key)
+				} else {
+					fmt.Printf("Find(%d) = %s\n", data.key, record)
+				}
 			}
-		}
-		case "update": { // kdjlyy
-			err := tree.Update(data.key, data.value)
-			if (err != nil) {
-				fmt.Printf("%s in Update(%d, %s)!!!\n", err, data.key, data.value)
+		case "update":
+			{ // kdjlyy
+				err := tree.Update(data.key, data.value)
+				if err != nil {
+					fmt.Printf("%s in Update(%d, %s)!!!\n", err, data.key, data.value)
+				}
 			}
-		}
 
 		}
 	}
-
 
 	PrintTree(tree)
 
