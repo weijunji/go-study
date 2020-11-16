@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"sync"
 )
 
 const order int = 4
@@ -17,6 +18,7 @@ var ErrKeyNotFound = errors.New("Key not found")
 
 // BPTree : bptree
 type BPTree struct {
+	sync.RWMutex
 	root      *Node
 	firstLeaf *Node
 }
@@ -238,6 +240,8 @@ func (t *BPTree) insertIntoLeaf(key uint64, value string) error {
 
 // Insert : insert kv into tree, return HasExistedKeyError if key exists
 func (t *BPTree) Insert(key uint64, value string) error {
+	t.Lock()
+	defer t.Unlock()
 	if t.root == nil {
 		node := &Node{}
 		t.root = node
@@ -256,9 +260,12 @@ func (t *BPTree) Insert(key uint64, value string) error {
 
 func (t *BPTree) Delete(key uint64) error {
 	//删除一个节点，先从树根往下查找这个节点
+	t.Lock()
+	defer t.Unlock()
 	t.root.remove(key, t)
 	return errors.New("success")
 }
+
 func (n *Node) remove(key uint64, tree *BPTree) error {
 	//如果是叶子节点
 	if n.isLeaf {
@@ -344,6 +351,7 @@ func (n *Node) remove(key uint64, tree *BPTree) error {
 	}
 	return errors.New("success")
 }
+
 func (n *Node) updateMaxKey() {
 	if n.parent == nil {
 		return
@@ -562,10 +570,11 @@ func (n *Node) containsKey(key uint64) int64 {
 	return -1
 }
 
-
 /*--- kdjlyy start ---*/
 
 func (t *BPTree) Find(key uint64) (string, error) {
+	t.RLock()
+	defer t.RUnlock()
 	i := 0
 	leaf := t.findLeaf(key)
 
@@ -579,7 +588,7 @@ func (t *BPTree) Find(key uint64) (string, error) {
 			flag = true
 		}
 	}
-	if (!flag) {
+	if !flag {
 		return "", ErrKeyNotFound
 	}
 
@@ -593,6 +602,8 @@ func (t *BPTree) Find(key uint64) (string, error) {
 
 //change the key's value: (key, old_value) -> (key, value)
 func (t *BPTree) Update(key uint64, value string) error {
+	t.Lock()
+	defer t.Unlock()
 	i := 0
 	leaf := t.findLeaf(key)
 	if leaf == nil {
@@ -604,7 +615,7 @@ func (t *BPTree) Update(key uint64, value string) error {
 			flag = true
 		}
 	}
-	if (!flag) {
+	if !flag {
 		return ErrKeyNotFound
 	}
 
@@ -613,7 +624,7 @@ func (t *BPTree) Update(key uint64, value string) error {
 			leaf.records[i] = value
 		}
 	}
-	return  nil
+	return nil
 }
 
 /*--- kdjlyy end ---*/
