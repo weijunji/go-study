@@ -1,9 +1,10 @@
 package main
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	bptree "github.com/weijunji/bptree/memory"
-	"net/http"
 )
 
 var trees map[string]*bptree.BPTree = make(map[string]*bptree.BPTree)
@@ -15,12 +16,9 @@ func setupRouter() *gin.Engine {
 		bptree.NewBPTree()
 		// TODO: get val from tree, return 404 if key doesn't exist
 		// GET /bptree/:id?key=123
-		// tree.GET("/:id", getFromTree)
+		tree.GET("/:id", getFromTree)
 		tree.PUT("/:id", putIntoTree)
-		// TODO: delete key from tree
 		tree.DELETE("/:id", deleteTreeNode)
-		// DELETE /bptree/:id  {"key": 123}
-		// tree.DELETE("/:id", deleteTreeNode)
 	}
 	r.GET("/ping", func(c *gin.Context) {
 		c.String(200, "pong")
@@ -44,28 +42,58 @@ func putIntoTree(c *gin.Context) {
 	var kv TreeKV
 	if err := c.BindJSON(&kv); err != nil {
 		c.Status(http.StatusBadRequest)
+		return
 	}
 	if err := tree.Update(kv.Key, kv.Val); err != nil {
 		tree.Insert(kv.Key, kv.Val)
 	}
 	c.Status(http.StatusOK)
 }
+
+type TreeK struct {
+	Key uint64 `json:"key" binding:"required"`
+}
+
+func getFromTree(c *gin.Context) {
+	id := c.Param("id")
+	var tree *bptree.BPTree
+	var ok bool
+	if tree, ok = trees[id]; !ok {
+		c.Status(http.StatusNotFound)
+		return
+	}
+	var key TreeK
+	if err := c.BindJSON(&key); err != nil {
+		c.Status(http.StatusBadRequest)
+		return
+	}
+	if val, err := tree.Find(key.Key); err != nil {
+		c.Status(http.StatusNotFound)
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"value": val,
+		})
+	}
+}
+
 func deleteTreeNode(c *gin.Context) {
 	id := c.Param("id")
-	if _, ok := trees[id]; !ok {
-		trees[id] = bptree.NewBPTree()
+	var tree *bptree.BPTree
+	var ok bool
+	if tree, ok = trees[id]; !ok {
+		c.Status(http.StatusNotFound)
+		return
 	}
-	tree := trees[id]
-	var kv TreeKV
-	if err := c.BindJSON(&kv); err != nil {
+	var key TreeK
+	if err := c.BindJSON(&key); err != nil {
 		c.Status(http.StatusBadRequest)
 		return
 	}
-	if err := tree.Delete(kv.Key); err != nil {
+	if err := tree.Delete(key.Key); err != nil {
 		c.Status(http.StatusBadRequest)
-		return
+	} else {
+		c.Status(http.StatusOK)
 	}
-	c.Status(http.StatusOK)
 }
 
 func main() {

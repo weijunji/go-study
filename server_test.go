@@ -20,7 +20,9 @@ func TestPingRoute(t *testing.T) {
 	assert.Equal(t, "pong", w.Body.String())
 }
 
-func TestPutBPTree(t *testing.T) {
+func TestBPTree(t *testing.T) {
+	router := setupRouter()
+	// Test put
 	testData := []struct {
 		body string
 		code int
@@ -35,14 +37,14 @@ func TestPutBPTree(t *testing.T) {
 		{`{"val": "test"}`, http.StatusBadRequest},
 		{`{"key": "ada"}`, http.StatusBadRequest},
 	}
-	router := setupRouter()
-
 	for _, test := range testData {
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("PUT", "/bptree/tree", strings.NewReader(test.body))
 		router.ServeHTTP(w, req)
 		assert.Equal(t, test.code, w.Code)
 	}
+
+	// test delete
 	testData = []struct {
 		body string
 		code int
@@ -57,21 +59,40 @@ func TestPutBPTree(t *testing.T) {
 		router.ServeHTTP(w, req)
 		assert.Equal(t, test.code, w.Code)
 	}
+
+	// test get
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/bptree/tree", strings.NewReader(`{"key": 161}`))
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, `{"value":"test1"}`, w.Body.String())
+
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest("GET", "/bptree/tree", strings.NewReader(`{"key": 123313}`))
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusNotFound, w.Code)
 }
-func TestDeleteBPTree(t *testing.T) {
-	testData := []struct {
-		body string
-		code int
-	}{
-		{`{"key": 123, "val": " "}`, http.StatusBadRequest},
-		{`{"key": 166, "val": " "}`, http.StatusBadRequest},
-	}
+
+func TestDeleteBPTreeError(t *testing.T) {
 	router := setupRouter()
 
-	for _, test := range testData {
-		w := httptest.NewRecorder()
-		req, _ := http.NewRequest("DELETE", "/bptree/tree", strings.NewReader(test.body))
-		router.ServeHTTP(w, req)
-		assert.Equal(t, test.code, w.Code)
-	}
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("DELETE", "/bptree/dtree", strings.NewReader(`{"key": 250}`))
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusNotFound, w.Code)
+
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest("DELETE", "/bptree/niltree", strings.NewReader(`{"key": 250}`))
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusNotFound, w.Code)
+
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest("PUT", "/bptree/dtree", strings.NewReader(`{"key": 250, "val": "test1"}`))
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest("DELETE", "/bptree/dtree", strings.NewReader(`{"key": 251}`))
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
 }
