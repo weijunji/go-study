@@ -43,4 +43,35 @@ func TestPutBPTree(t *testing.T) {
 		router.ServeHTTP(w, req)
 		assert.Equal(t, test.code, w.Code)
 	}
+	testData = []struct {
+		body string
+		code int
+	}{
+		{`{"key": 123, "val": " "}`, http.StatusOK},
+		{`{"key": 166, "val": " "}`, http.StatusOK},
+	}
+	for _, test := range testData {
+		w := httptest.NewRecorder()
+
+		req, _ := http.NewRequest("DELETE", "/bptree/tree", strings.NewReader(test.body))
+		router.ServeHTTP(w, req)
+		assert.Equal(t, test.code, w.Code)
+	}
+}
+func TestDeleteBPTree(t *testing.T) {
+	testData := []struct {
+		body string
+		code int
+	}{
+		{`{"key": 123, "val": " "}`, http.StatusBadRequest},
+		{`{"key": 166, "val": " "}`, http.StatusBadRequest},
+	}
+	router := setupRouter()
+
+	for _, test := range testData {
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("DELETE", "/bptree/tree", strings.NewReader(test.body))
+		router.ServeHTTP(w, req)
+		assert.Equal(t, test.code, w.Code)
+	}
 }

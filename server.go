@@ -1,10 +1,9 @@
 package main
 
 import (
-	"net/http"
-
 	"github.com/gin-gonic/gin"
 	bptree "github.com/weijunji/bptree/memory"
+	"net/http"
 )
 
 var trees map[string]*bptree.BPTree = make(map[string]*bptree.BPTree)
@@ -19,6 +18,7 @@ func setupRouter() *gin.Engine {
 		// tree.GET("/:id", getFromTree)
 		tree.PUT("/:id", putIntoTree)
 		// TODO: delete key from tree
+		tree.DELETE("/:id", deleteTreeNode)
 		// DELETE /bptree/:id  {"key": 123}
 		// tree.DELETE("/:id", deleteTreeNode)
 	}
@@ -47,6 +47,23 @@ func putIntoTree(c *gin.Context) {
 	}
 	if err := tree.Update(kv.Key, kv.Val); err != nil {
 		tree.Insert(kv.Key, kv.Val)
+	}
+	c.Status(http.StatusOK)
+}
+func deleteTreeNode(c *gin.Context) {
+	id := c.Param("id")
+	if _, ok := trees[id]; !ok {
+		trees[id] = bptree.NewBPTree()
+	}
+	tree := trees[id]
+	var kv TreeKV
+	if err := c.BindJSON(&kv); err != nil {
+		c.Status(http.StatusBadRequest)
+		return
+	}
+	if err := tree.Delete(kv.Key); err != nil {
+		c.Status(http.StatusBadRequest)
+		return
 	}
 	c.Status(http.StatusOK)
 }

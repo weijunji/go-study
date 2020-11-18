@@ -263,8 +263,11 @@ func (t *BPTree) Delete(key uint64) error {
 	//删除一个节点，先从树根往下查找这个节点
 	t.Lock()
 	defer t.Unlock()
-	t.root.remove(key, t)
-	return errors.New("success")
+	if t.root == nil {
+		return ErrKeyNotFound
+	}
+	err := t.root.remove(key, t)
+	return err
 }
 
 func (n *Node) remove(key uint64, tree *BPTree) error {
@@ -350,7 +353,7 @@ func (n *Node) remove(key uint64, tree *BPTree) error {
 		}
 		return ErrKeyNotFound
 	}
-	return errors.New("success")
+	return nil
 }
 
 func (n *Node) updateMaxKey() {
