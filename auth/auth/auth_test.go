@@ -10,6 +10,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestEncrypter(t *testing.T) {
+	assert.Equal(t, "0d3022fabc99ac91919a06609b205ebe", encryptPassword("123456"))
+}
+
 func TestLogin(t *testing.T) {
 	r := gin.Default()
 	g := r.Group("/")
@@ -20,6 +24,7 @@ func TestLogin(t *testing.T) {
 		code int
 	}{
 		{``, http.StatusBadRequest},
+		{`{"username": "admin","password": "123456"}`, http.StatusUnauthorized},
 		{`{"username": "haruka","password": "123457"}`, http.StatusUnauthorized},
 		{`{"username": "haruka","password": "123456"}`, http.StatusOK},
 	}

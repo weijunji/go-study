@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"errors"
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
@@ -14,8 +15,11 @@ type LoginClaims struct {
 	StandardClaims jwt.StandardClaims
 }
 
-// Valid : implement jwt.Claims
+// Valid : implement jwt.Claims, check expire time
 func (claims LoginClaims) Valid() error {
+	if claims.StandardClaims.ExpiresAt < time.Now().Unix() {
+		return errors.New("Token already expired")
+	}
 	return nil
 }
 
