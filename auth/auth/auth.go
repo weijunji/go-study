@@ -44,6 +44,7 @@ func SetupRouter(anonymousGroup *gin.RouterGroup, authGroup *gin.RouterGroup) {
 	authG := authGroup.Group("/auth")
 	{
 		authG.PUT("/profile", updateProfile)
+		authG.GET("/profile", getProfile)
 	}
 }
 
@@ -55,6 +56,12 @@ func updateProfile(c *gin.Context) {
 	// val, _ := c.Get("userinfo")
 	// userinfo, _ := val.(Userinfo)
 	// TODO: update user profile
+}
+
+func getProfile(c *gin.Context) {
+	// val, _ := c.Get("userinfo")
+	// userinfo, _ := val.(Userinfo)
+	// TODO: get user profile. DONNOT SEND PASSWORD OUT
 }
 
 // Login : login via username and password
