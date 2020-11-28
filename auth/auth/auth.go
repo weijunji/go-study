@@ -16,7 +16,7 @@ import (
 type User struct {
 	ID        uint64 `gorm:"primaryKey;autoIncrement"`
 	Username  string `gorm:"type:varchar(16);uniqueIndex;not null"`
-	Password  string `gorm:"type:char(32);not null"`
+	Password  string `gorm:"type:char(32);not null" json:"-"`
 	Role      uint64 // 0: admin, 1: normal
 	AvatarURL string
 	Introduce string
@@ -61,7 +61,7 @@ func updateProfile(c *gin.Context) {
 func getProfile(c *gin.Context) {
 	// val, _ := c.Get("userinfo")
 	// userinfo, _ := val.(Userinfo)
-	// TODO: get user profile. DONNOT SEND PASSWORD OUT
+	// TODO: get user profile
 }
 
 // Login : login via username and password
