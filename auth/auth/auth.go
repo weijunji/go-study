@@ -39,7 +39,7 @@ func SetupRouter(anonymousGroup *gin.RouterGroup, authGroup *gin.RouterGroup) {
 	anonyAuthG := anonymousGroup.Group("/auth")
 	{
 		anonyAuthG.POST("/login", login)
-		authG.POST("/register", register)
+		anonyAuthG.POST("/register", register)
 	}
 	authG := authGroup.Group("/auth")
 	{
@@ -52,7 +52,8 @@ func register(c *gin.Context) {
 }
 
 func updateProfile(c *gin.Context) {
-	userinfo := c.Get("userinfo").(Userinfo) // see userinfo in middleware.go
+	// val, _ := c.Get("userinfo")
+	// userinfo, _ := val.(Userinfo)
 	// TODO: update user profile
 }
 
