@@ -1,23 +1,22 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/gin-gonic/gin"
-	. "github.com/weijunji/go-study/auth/utilities"
+	"github.com/weijunji/go-study/auth/auth"
 )
 
 func main() {
-	db := GetDB()
-	fmt.Printf("db: %+v", db)
 	r := setupRouter()
 	r.Run(":8080")
 }
 
 func setupRouter() *gin.Engine {
 	r := gin.Default()
-	r.GET("/ping", func(c *gin.Context) {
+	anonymousGroup := r.Group("/", auth.AuthMiddleware())
+	authGroup := r.Group("/", auth.LoginRequired())
+	anonymousGroup.GET("/ping", func(c *gin.Context) {
 		c.String(200, "pong")
 	})
+	auth.SetupRouter(anonymousGroup, authGroup)
 	return r
 }
