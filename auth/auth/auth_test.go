@@ -26,7 +26,7 @@ func TestLogin(t *testing.T) {
 		{``, http.StatusBadRequest},
 		{`{"username": "admin","password": "123456"}`, http.StatusUnauthorized},
 		{`{"username": "haruka","password": "123457"}`, http.StatusUnauthorized},
-		{`{"username": "haruka","password": "123456"}`, http.StatusOK},
+		{`{"username": "kanbusi","password": "123457"}`, http.StatusOK},
 	}
 
 	for _, test := range testData {
@@ -36,4 +36,9 @@ func TestLogin(t *testing.T) {
 
 		assert.Equal(t, test.code, w.Code)
 	}
+	//w := httptest.NewRecorder()
+	//req, _ := http.NewRequest("POST", "/auth/register", strings.NewReader(`{"username": "kanbusi","password1": "123457","password2": "123457"}`))
+	//r.ServeHTTP(w, req)
+	//
+	//assert.Equal(t, http.StatusOK, w.Code)
 }
