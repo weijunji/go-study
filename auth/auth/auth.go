@@ -52,15 +52,10 @@ func register(c *gin.Context) {
 	// TODO: register
 	type UserRegistration struct {
 		Username string `json:"username" binding:"required"`
-		Passwd1  string `json:"password1" binding:"required"`
-		Passwd2  string `json:"password2" binding:"required"`
+		Password string `json:"password" binding:"required"`
 	}
 	userRegister := UserRegistration{}
 	if err := c.BindJSON(&userRegister); err != nil {
-		c.Status(http.StatusBadRequest)
-		return
-	}
-	if userRegister.Passwd1 != userRegister.Passwd2 {
 		c.Status(http.StatusBadRequest)
 		return
 	}
@@ -72,7 +67,7 @@ func register(c *gin.Context) {
 	}
 	userInfo := User{
 		Username: userRegister.Username,
-		Password: encryptPassword(userRegister.Passwd1),
+		Password: encryptPassword(userRegister.Password),
 		Role:     0,
 	}
 	tx = util.GetDB().Create(&userInfo)
@@ -93,11 +88,8 @@ func register(c *gin.Context) {
 }
 
 func updateProfile(c *gin.Context) {
-	// val, _ := c.Get("userinfo")
-	// userinfo, _ := val.(Userinfo)
-	// TODO: update user profile
 	val, _ := c.Get("userinfo")
-	userinfo := val.(Userinfo)
+	userinfo, _ := val.(Userinfo)
 	type UpdateBody struct {
 		Username  string `json:"username"`
 		Password  string `json:"password"`
@@ -142,9 +134,6 @@ func updateProfile(c *gin.Context) {
 }
 
 func getProfile(c *gin.Context) {
-	// val, _ := c.Get("userinfo")
-	// userinfo, _ := val.(Userinfo)
-	// TODO: get user profile
 	val, _ := c.Get("userinfo")
 	userinfo, _ := val.(Userinfo)
 	user := User{ID: userinfo.ID}

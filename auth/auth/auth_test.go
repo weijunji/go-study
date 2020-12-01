@@ -37,7 +37,7 @@ func TestLogin(t *testing.T) {
 		assert.Equal(t, test.code, w.Code)
 	}
 	//w := httptest.NewRecorder()
-	//req, _ := http.NewRequest("POST", "/auth/register", strings.NewReader(`{"username": "kanbusi","password1": "123457","password2": "123457"}`))
+	//req, _ := http.NewRequest("POST", "/auth/register", strings.NewReader(`{"username": "kanbusi","password": "123457"}`))
 	//r.ServeHTTP(w, req)
 	//
 	//assert.Equal(t, http.StatusOK, w.Code)
