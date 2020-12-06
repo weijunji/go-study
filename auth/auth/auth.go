@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/weijunji/go-study/auth/util"
+	"github.com/weijunji/go-study/utils"
 	"gorm.io/gorm"
 )
 
@@ -18,9 +18,9 @@ type User struct {
 	Username  string `gorm:"type:varchar(16);uniqueIndex;not null"`
 	Password  string `gorm:"type:char(32);not null" json:"-"`
 	Role      uint64 // 0: admin, 1: normal
-	AvatarURL string
-	Introduce string
-	Email     string
+	AvatarURL string `gorm:"type:varchar(128)"`
+	Introduce string `gorm:"type:tinytext"`
+	Email     string `gorm:"type:tinytext"`
 }
 
 const salt string = "3Wc6cX6A"
@@ -35,7 +35,7 @@ func encryptPassword(password string) string {
 
 // SetupRouter : set up auth router
 func SetupRouter(anonymousGroup *gin.RouterGroup, authGroup *gin.RouterGroup) {
-	util.GetDB().AutoMigrate(&User{})
+	utils.GetMysql().AutoMigrate(&User{})
 	anonyAuthG := anonymousGroup.Group("/auth")
 	{
 		anonyAuthG.POST("/login", login)
@@ -60,7 +60,7 @@ func register(c *gin.Context) {
 		return
 	}
 	//the username has been existed
-	tx := util.GetDB().Where("username=?", userRegister.Username).First(&User{})
+	tx := utils.GetMysql().Where("username=?", userRegister.Username).First(&User{})
 	if tx.RowsAffected != 0 {
 		c.Status(http.StatusBadRequest)
 		return
@@ -70,7 +70,7 @@ func register(c *gin.Context) {
 		Password: encryptPassword(userRegister.Password),
 		Role:     0,
 	}
-	tx = util.GetDB().Create(&userInfo)
+	tx = utils.GetMysql().Create(&userInfo)
 	if err := tx.Error; err != nil {
 		c.Status(http.StatusBadRequest)
 		return
@@ -112,7 +112,7 @@ func updateProfile(c *gin.Context) {
 		Introduce: updateBody.Introduce,
 		Email:     updateBody.Email,
 	}
-	if err := util.GetDB().Model(&user).Updates(user).Error; err != nil {
+	if err := utils.GetMysql().Model(&user).Updates(user).Error; err != nil {
 		c.Status(http.StatusBadRequest)
 		return
 	}
@@ -137,7 +137,7 @@ func getProfile(c *gin.Context) {
 	val, _ := c.Get("userinfo")
 	userinfo, _ := val.(Userinfo)
 	user := User{ID: userinfo.ID}
-	if err := util.GetDB().First(&user).Error; err != nil {
+	if err := utils.GetMysql().First(&user).Error; err != nil {
 		c.Status(http.StatusOK)
 		return
 	}
@@ -172,7 +172,7 @@ func login(c *gin.Context) {
 	}
 
 	// get user from db
-	db := util.GetDB()
+	db := utils.GetMysql()
 	var user User
 	if err := db.Where("username = ?", body.Username).First(&user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

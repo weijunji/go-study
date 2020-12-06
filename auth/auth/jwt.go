@@ -2,12 +2,19 @@ package auth
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/weijunji/go-study/utils"
 )
 
-const secretKey string = "FlFhhEDskm68mOAbi!yTryI0KleXlgJ@" // replace this before deployment
+var secretKey string
+
+func init() {
+	conf := utils.GetConfig("common")
+	secretKey = conf["secretKey"].(string)
+}
 
 type LoginClaims struct {
 	ID             uint64
@@ -18,6 +25,8 @@ type LoginClaims struct {
 // Valid : implement jwt.Claims, check expire time
 func (claims LoginClaims) Valid() error {
 	if claims.StandardClaims.ExpiresAt < time.Now().Unix() {
+		fmt.Println(claims.StandardClaims.ExpiresAt)
+		fmt.Println(time.Now().Unix())
 		return errors.New("Token already expired")
 	}
 	return nil
@@ -26,6 +35,7 @@ func (claims LoginClaims) Valid() error {
 // GenerateToken : generate token with 3 days
 func GenerateToken(uid uint64, role uint64, expireDuration time.Duration) (string, error) {
 	expire := time.Now().Add(expireDuration)
+	fmt.Println(expire.Unix())
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, LoginClaims{
 		ID:   uid,
 		Role: role,
