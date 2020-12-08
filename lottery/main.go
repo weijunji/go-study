@@ -1,7 +1,22 @@
 package main
 
+import (
+	"github.com/gin-gonic/gin"
+	"github.com/weijunji/go-study/auth/auth"
+	"github.com/weijunji/go-study/lottery/lottery"
+)
+
 func main() {
-	// GET /lottery/list         奖品列表
-	// GET /lottery/info/{id}    抽奖信息
-	// GET /lottery/lottery/{id} 抽奖
+	r := setupRouter()
+	r.Run(":8080")
+}
+
+func setupRouter() *gin.Engine {
+	r := gin.Default()
+	r.GET("/ping", func(c *gin.Context) {
+		c.String(200, "pong")
+	})
+	authGroup := r.Group("/", auth.LoginRequired())
+	lottery.SetupRouter(authGroup)
+	return r
 }
